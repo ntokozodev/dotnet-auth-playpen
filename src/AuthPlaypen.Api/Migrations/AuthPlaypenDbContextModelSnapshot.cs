@@ -83,8 +83,6 @@ partial class AuthPlaypenDbContextModelSnapshot : ModelSnapshot
                 .IsRequired()
                 .HasColumnType("text");
 
-            b.Property<bool>("IsGlobal")
-                .HasColumnType("boolean");
 
             b.Property<string>("ScopeName")
                 .IsRequired()
