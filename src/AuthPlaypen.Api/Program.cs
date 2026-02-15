@@ -10,7 +10,10 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<AuthPlaypenDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    var connectionString = builder.Configuration.GetConnectionString("Postgres")
+        ?? throw new InvalidOperationException("Connection string 'Postgres' was not found.");
+
+    options.UseNpgsql(connectionString);
 });
 
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
