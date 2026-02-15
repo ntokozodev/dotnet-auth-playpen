@@ -1,6 +1,6 @@
-using AuthPlaypen.Api.Data;
+using AuthPlaypen.Data.Data;
 using Microsoft.EntityFrameworkCore;
-using AuthPlaypen.Api.Services;
+using AuthPlaypen.Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

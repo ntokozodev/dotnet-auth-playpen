@@ -2,6 +2,16 @@
 
 ASP.NET Core 8 Web API + PostgreSQL that supports CRUD for `Application` and `Scope`.
 
+
+## Project layout
+
+The solution is now organized into layered projects:
+
+- `AuthPlaypen.Api` - HTTP surface (controllers, startup, migrations).
+- `AuthPlaypen.Application` - DTOs and application services/use-cases.
+- `AuthPlaypen.Data` - EF Core `DbContext` and persistence mapping.
+- `AuthPlaypen.Domain` - domain entities and enums.
+
 ## Domain rules implemented
 
 - Every application must reference at least one scope when created or updated.

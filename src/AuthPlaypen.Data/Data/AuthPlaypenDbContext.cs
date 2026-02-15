@@ -1,7 +1,7 @@
-using AuthPlaypen.Api.Entities;
+using AuthPlaypen.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace AuthPlaypen.Api.Data;
+namespace AuthPlaypen.Data.Data;
 
 public class AuthPlaypenDbContext(DbContextOptions<AuthPlaypenDbContext> options) : DbContext(options)
 {

@@ -1,4 +1,4 @@
-namespace AuthPlaypen.Api.Entities;
+namespace AuthPlaypen.Domain.Entities;
 
 public class ApplicationEntity
 {

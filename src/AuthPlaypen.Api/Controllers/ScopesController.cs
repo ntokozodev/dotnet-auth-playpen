@@ -1,5 +1,5 @@
-using AuthPlaypen.Api.Dtos;
-using AuthPlaypen.Api.Services;
+using AuthPlaypen.Application.Dtos;
+using AuthPlaypen.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthPlaypen.Api.Controllers;
