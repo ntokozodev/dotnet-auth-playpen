@@ -9,6 +9,7 @@ ASP.NET Core 8 Web API + PostgreSQL that supports CRUD for `Application` and `Sc
   - `applications = []` in scope payload means **global scope**.
   - `applications = [app1, app2]` means **scope only for those applications**.
 - Scope update/delete operations are blocked when they would leave any existing application with zero effective scopes.
+- `redirectUris` and `postLogoutRedirectUris` are only valid when `flow` is `AuthorizationWithPKCE`.
 
 ## Run with Docker
 
@@ -33,7 +34,7 @@ Swagger UI: `http://localhost:8080/swagger`
   "displayName": "Admin App",
   "clientId": "admin-client",
   "clientSecret": "secret",
-  "flow": "ClientCredentials",
+  "flow": "AuthorizationWithPKCE",
   "postLogoutRedirectUris": "https://example.com/logout",
   "redirectUris": "https://example.com/callback",
   "scopes": [

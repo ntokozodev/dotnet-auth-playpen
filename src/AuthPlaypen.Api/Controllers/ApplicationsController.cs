@@ -57,6 +57,12 @@ public class ApplicationsController(AuthPlaypenDbContext dbContext) : Controller
             return BadRequest("Application must include at least one scope.");
         }
 
+        var redirectUrisValidationError = ValidateRedirectUris(request.Flow, request.RedirectUris, request.PostLogoutRedirectUris);
+        if (redirectUrisValidationError is not null)
+        {
+            return BadRequest(redirectUrisValidationError);
+        }
+
         var scopes = await dbContext.Scopes
             .Where(s => request.ScopeIds.Contains(s.Id))
             .ToListAsync(cancellationToken);
@@ -98,6 +104,12 @@ public class ApplicationsController(AuthPlaypenDbContext dbContext) : Controller
         if (request.ScopeIds is null || request.ScopeIds.Count == 0)
         {
             return BadRequest("Application must include at least one scope.");
+        }
+
+        var redirectUrisValidationError = ValidateRedirectUris(request.Flow, request.RedirectUris, request.PostLogoutRedirectUris);
+        if (redirectUrisValidationError is not null)
+        {
+            return BadRequest(redirectUrisValidationError);
         }
 
         var application = await dbContext.Applications
@@ -172,5 +184,20 @@ public class ApplicationsController(AuthPlaypenDbContext dbContext) : Controller
             application.PostLogoutRedirectUris,
             application.RedirectUris,
             scopeDtos);
+    }
+
+    private static string? ValidateRedirectUris(ApplicationFlow flow, string? redirectUris, string? postLogoutRedirectUris)
+    {
+        if (flow == ApplicationFlow.AuthorizationWithPKCE)
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(redirectUris) || !string.IsNullOrWhiteSpace(postLogoutRedirectUris))
+        {
+            return "RedirectUris and PostLogoutRedirectUris are only allowed for AuthorizationWithPKCE flow.";
+        }
+
+        return null;
     }
 }
