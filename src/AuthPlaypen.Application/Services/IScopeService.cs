@@ -1,6 +1,6 @@
-using AuthPlaypen.Api.Dtos;
+using AuthPlaypen.Application.Dtos;
 
-namespace AuthPlaypen.Api.Services;
+namespace AuthPlaypen.Application.Services;
 
 public interface IScopeService
 {

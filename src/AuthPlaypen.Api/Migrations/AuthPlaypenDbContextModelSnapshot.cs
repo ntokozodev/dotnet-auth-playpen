@@ -1,5 +1,5 @@
 using System;
-using AuthPlaypen.Api.Data;
+using AuthPlaypen.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -21,7 +21,7 @@ partial class AuthPlaypenDbContextModelSnapshot : ModelSnapshot
 
         NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-        modelBuilder.Entity("AuthPlaypen.Api.Entities.ApplicationEntity", b =>
+        modelBuilder.Entity("AuthPlaypen.Domain.Entities.ApplicationEntity", b =>
         {
             b.Property<Guid>("Id")
                 .ValueGeneratedOnAdd()
@@ -54,7 +54,7 @@ partial class AuthPlaypenDbContextModelSnapshot : ModelSnapshot
             b.ToTable("applications");
         });
 
-        modelBuilder.Entity("AuthPlaypen.Api.Entities.ApplicationScopeEntity", b =>
+        modelBuilder.Entity("AuthPlaypen.Domain.Entities.ApplicationScopeEntity", b =>
         {
             b.Property<Guid>("ApplicationId")
                 .HasColumnType("uuid");
@@ -69,7 +69,7 @@ partial class AuthPlaypenDbContextModelSnapshot : ModelSnapshot
             b.ToTable("application_scopes");
         });
 
-        modelBuilder.Entity("AuthPlaypen.Api.Entities.ScopeEntity", b =>
+        modelBuilder.Entity("AuthPlaypen.Domain.Entities.ScopeEntity", b =>
         {
             b.Property<Guid>("Id")
                 .ValueGeneratedOnAdd()
@@ -98,15 +98,15 @@ partial class AuthPlaypenDbContextModelSnapshot : ModelSnapshot
             b.ToTable("scopes");
         });
 
-        modelBuilder.Entity("AuthPlaypen.Api.Entities.ApplicationScopeEntity", b =>
+        modelBuilder.Entity("AuthPlaypen.Domain.Entities.ApplicationScopeEntity", b =>
         {
-            b.HasOne("AuthPlaypen.Api.Entities.ApplicationEntity", "Application")
+            b.HasOne("AuthPlaypen.Domain.Entities.ApplicationEntity", "Application")
                 .WithMany("ApplicationScopes")
                 .HasForeignKey("ApplicationId")
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
 
-            b.HasOne("AuthPlaypen.Api.Entities.ScopeEntity", "Scope")
+            b.HasOne("AuthPlaypen.Domain.Entities.ScopeEntity", "Scope")
                 .WithMany("ApplicationScopes")
                 .HasForeignKey("ScopeId")
                 .OnDelete(DeleteBehavior.Cascade)

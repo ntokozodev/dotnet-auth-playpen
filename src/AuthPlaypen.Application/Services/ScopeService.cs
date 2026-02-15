@@ -1,9 +1,9 @@
-using AuthPlaypen.Api.Data;
-using AuthPlaypen.Api.Dtos;
-using AuthPlaypen.Api.Entities;
+using AuthPlaypen.Data.Data;
+using AuthPlaypen.Application.Dtos;
+using AuthPlaypen.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace AuthPlaypen.Api.Services;
+namespace AuthPlaypen.Application.Services;
 
 public class ScopeService(AuthPlaypenDbContext dbContext) : IScopeService
 {

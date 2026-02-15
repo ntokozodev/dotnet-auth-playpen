@@ -1,4 +1,4 @@
-namespace AuthPlaypen.Api.Dtos;
+namespace AuthPlaypen.Application.Dtos;
 
 public record ApplicationReferenceDto(Guid Id, string DisplayName, string ClientId);
 

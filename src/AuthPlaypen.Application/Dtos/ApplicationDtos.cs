@@ -1,6 +1,6 @@
-using AuthPlaypen.Api.Entities;
+using AuthPlaypen.Domain.Entities;
 
-namespace AuthPlaypen.Api.Dtos;
+namespace AuthPlaypen.Application.Dtos;
 
 public record ScopeReferenceDto(Guid Id, string DisplayName, string ScopeName, string Description);
 
