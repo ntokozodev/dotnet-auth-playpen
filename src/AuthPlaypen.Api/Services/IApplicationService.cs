@@ -1,0 +1,12 @@
+using AuthPlaypen.Api.Dtos;
+
+namespace AuthPlaypen.Api.Services;
+
+public interface IApplicationService
+{
+    Task<IReadOnlyCollection<ApplicationDto>> GetAllAsync(CancellationToken cancellationToken);
+    Task<ApplicationDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+    Task<(ApplicationDto? Application, string? Error)> CreateAsync(CreateApplicationRequest request, CancellationToken cancellationToken);
+    Task<(ApplicationDto? Application, string? Error, bool NotFound)> UpdateAsync(Guid id, UpdateApplicationRequest request, CancellationToken cancellationToken);
+    Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);
+}
