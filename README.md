@@ -77,3 +77,17 @@ Swagger UI: `http://localhost:8080/swagger`
 EF Core migration is included in `src/AuthPlaypen.Api/Migrations` and automatically applied on startup via `Database.Migrate()`.
 
 For design-time EF commands (for example, `dotnet ef migrations add`), `AuthPlaypenDbContextFactory` reads the `Postgres` connection string from `appsettings.Development.json` or `appsettings.json`.
+
+### Why `AuthPlaypenDbContextFactory` is in the API project
+
+`AuthPlaypenDbContextFactory` is a **design-time** helper used by EF Core tooling (`dotnet ef ...`), not by runtime dependency injection.
+
+It currently lives in `AuthPlaypen.Api` because:
+
+- Migrations are stored in `AuthPlaypen.Api/Migrations`.
+- The connection string source (`appsettings*.json`) is also in the API project.
+
+Could it be moved to `AuthPlaypen.Data`? Yes. But if you do that, you'll usually also want to either:
+
+- move migrations into `AuthPlaypen.Data`, or
+- run EF commands with explicit startup/target project parameters and ensure configuration loading still resolves correctly.
