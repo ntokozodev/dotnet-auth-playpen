@@ -7,10 +7,27 @@ ASP.NET Core 8 Web API + PostgreSQL that supports CRUD for `Application` and `Sc
 
 The solution is now organized into layered projects:
 
-- `AuthPlaypen.Api` - HTTP surface (controllers, startup, migrations).
+- `AuthPlaypen.Api` - HTTP surface and startup/composition root only.
 - `AuthPlaypen.Application` - DTOs and application services/use-cases.
-- `AuthPlaypen.Data` - EF Core `DbContext` and persistence mapping.
+- `AuthPlaypen.Data` - all EF Core persistence concerns.
 - `AuthPlaypen.Domain` - domain entities and enums.
+
+## Strict layer ownership
+
+This repository follows strict layer ownership:
+
+- `AuthPlaypen.Api`
+  - Owns controllers, request/response wiring, DI registration, and host startup.
+  - Must not own persistence artifacts (no migrations, no `DbContext` factory).
+- `AuthPlaypen.Application`
+  - Owns use-case orchestration and contracts.
+  - Must not contain HTTP or EF Core infrastructure details.
+- `AuthPlaypen.Data`
+  - Owns persistence end-to-end: `DbContext`, entity mapping, design-time factory, and EF migrations.
+- `AuthPlaypen.Domain`
+  - Owns core business model and enums with no infrastructure dependencies.
+
+In short: if a change is data/persistence-specific, it belongs in `AuthPlaypen.Data`.
 
 ## Domain rules implemented
 
@@ -72,22 +89,22 @@ Swagger UI: `http://localhost:8080/swagger`
 
 `applications: []` means the scope is global.
 
-## Migrations
+## Migrations and design-time EF tooling
 
-EF Core migration is included in `src/AuthPlaypen.Api/Migrations` and automatically applied on startup via `Database.Migrate()`.
+Under strict ownership, EF Core migrations and `AuthPlaypenDbContextFactory` should live in `AuthPlaypen.Data`.
 
-For design-time EF commands (for example, `dotnet ef migrations add`), `AuthPlaypenDbContextFactory` reads the `Postgres` connection string from `appsettings.Development.json` or `appsettings.json`.
+Use EF commands with explicit target/startup projects:
 
-### Why `AuthPlaypenDbContextFactory` is in the API project
+```bash
+dotnet ef migrations add <Name> \
+  --project src/AuthPlaypen.Data \
+  --startup-project src/AuthPlaypen.Api
+```
 
-`AuthPlaypenDbContextFactory` is a **design-time** helper used by EF Core tooling (`dotnet ef ...`), not by runtime dependency injection.
+```bash
+dotnet ef database update \
+  --project src/AuthPlaypen.Data \
+  --startup-project src/AuthPlaypen.Api
+```
 
-It currently lives in `AuthPlaypen.Api` because:
-
-- Migrations are stored in `AuthPlaypen.Api/Migrations`.
-- The connection string source (`appsettings*.json`) is also in the API project.
-
-Could it be moved to `AuthPlaypen.Data`? Yes. But if you do that, you'll usually also want to either:
-
-- move migrations into `AuthPlaypen.Data`, or
-- run EF commands with explicit startup/target project parameters and ensure configuration loading still resolves correctly.
+At runtime, API remains the composition root and continues to apply migrations through `Database.Migrate()` during startup.
