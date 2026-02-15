@@ -6,7 +6,7 @@ public class ScopeEntity
     public required string DisplayName { get; set; }
     public required string ScopeName { get; set; }
     public required string Description { get; set; }
-    public bool IsGlobal { get; set; }
+    public bool IsGlobal => ApplicationScopes.Count == 0;
 
     public ICollection<ApplicationScopeEntity> ApplicationScopes { get; set; } = new List<ApplicationScopeEntity>();
 }

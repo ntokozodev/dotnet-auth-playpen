@@ -16,7 +16,7 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
             .ToListAsync(cancellationToken);
 
         var globalScopes = await dbContext.Scopes
-            .Where(s => s.IsGlobal)
+            .Where(s => !s.ApplicationScopes.Any())
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -37,7 +37,7 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
         }
 
         var globalScopes = await dbContext.Scopes
-            .Where(s => s.IsGlobal)
+            .Where(s => !s.ApplicationScopes.Any())
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -58,6 +58,7 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
         }
 
         var scopes = await dbContext.Scopes
+            .Include(s => s.ApplicationScopes)
             .Where(s => request.ScopeIds.Contains(s.Id))
             .ToListAsync(cancellationToken);
 
@@ -117,6 +118,7 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
         }
 
         var scopes = await dbContext.Scopes
+            .Include(s => s.ApplicationScopes)
             .Where(s => request.ScopeIds.Contains(s.Id))
             .ToListAsync(cancellationToken);
 

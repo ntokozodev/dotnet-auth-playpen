@@ -33,8 +33,7 @@ public partial class InitialCreate : Migration
                 Id = table.Column<Guid>(type: "uuid", nullable: false),
                 DisplayName = table.Column<string>(type: "text", nullable: false),
                 ScopeName = table.Column<string>(type: "text", nullable: false),
-                Description = table.Column<string>(type: "text", nullable: false),
-                IsGlobal = table.Column<bool>(type: "boolean", nullable: false)
+                Description = table.Column<string>(type: "text", nullable: false)
             },
             constraints: table =>
             {

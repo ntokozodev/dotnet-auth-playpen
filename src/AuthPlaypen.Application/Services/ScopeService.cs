@@ -46,8 +46,7 @@ public class ScopeService(AuthPlaypenDbContext dbContext) : IScopeService
             Id = Guid.NewGuid(),
             DisplayName = request.DisplayName,
             ScopeName = request.ScopeName,
-            Description = request.Description,
-            IsGlobal = appIds.Count == 0
+            Description = request.Description
         };
 
         foreach (var appId in appIds)
@@ -106,8 +105,6 @@ public class ScopeService(AuthPlaypenDbContext dbContext) : IScopeService
         scope.DisplayName = request.DisplayName;
         scope.ScopeName = request.ScopeName;
         scope.Description = request.Description;
-        scope.IsGlobal = appIds.Count == 0;
-
         scope.ApplicationScopes.Clear();
         foreach (var appId in appIds)
         {
@@ -172,14 +169,14 @@ public class ScopeService(AuthPlaypenDbContext dbContext) : IScopeService
             return null;
         }
 
-        var globalCount = await dbContext.Scopes.CountAsync(s => s.IsGlobal, cancellationToken);
+        var globalCount = await dbContext.Scopes.CountAsync(s => !s.ApplicationScopes.Any(), cancellationToken);
 
         var appSpecificCounts = await dbContext.ApplicationScopes
             .GroupBy(x => x.ApplicationId)
             .Select(g => new { ApplicationId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.ApplicationId, x => x.Count, cancellationToken);
 
-        var currentlyScopedAppIds = currentScope.IsGlobal
+        var currentlyScopedAppIds = currentScope.ApplicationScopes.Count == 0
             ? allApps.ToHashSet()
             : currentScope.ApplicationScopes.Select(x => x.ApplicationId).ToHashSet();
 
@@ -187,7 +184,7 @@ public class ScopeService(AuthPlaypenDbContext dbContext) : IScopeService
         {
             var effectiveCount = globalCount + appSpecificCounts.GetValueOrDefault(appId, 0);
 
-            if (currentScope.IsGlobal)
+            if (currentScope.ApplicationScopes.Count == 0)
             {
                 effectiveCount -= 1;
             }
@@ -212,7 +209,7 @@ public class ScopeService(AuthPlaypenDbContext dbContext) : IScopeService
 
     private static ScopeDto ToDto(ScopeEntity scope)
     {
-        var applications = scope.IsGlobal
+        var applications = scope.ApplicationScopes.Count == 0
             ? Array.Empty<ApplicationReferenceDto>()
             : scope.ApplicationScopes
                 .Select(x => new ApplicationReferenceDto(
