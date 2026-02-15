@@ -19,7 +19,8 @@ public class AuthPlaypenDbContextFactory : IDesignTimeDbContextFactory<AuthPlayp
             ?? throw new InvalidOperationException("Connection string 'Postgres' was not found.");
 
         var optionsBuilder = new DbContextOptionsBuilder<AuthPlaypenDbContext>();
-        optionsBuilder.UseNpgsql(connectionString);
+        optionsBuilder.UseNpgsql(connectionString)
+            .UseSnakeCaseNamingConvention();
 
         return new AuthPlaypenDbContext(optionsBuilder.Options);
     }

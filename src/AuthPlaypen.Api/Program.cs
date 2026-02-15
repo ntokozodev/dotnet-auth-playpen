@@ -13,7 +13,8 @@ builder.Services.AddDbContext<AuthPlaypenDbContext>(options =>
     var connectionString = builder.Configuration.GetConnectionString("Postgres")
         ?? throw new InvalidOperationException("Connection string 'Postgres' was not found.");
 
-    options.UseNpgsql(connectionString);
+    options.UseNpgsql(connectionString)
+        .UseSnakeCaseNamingConvention();
 });
 
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
