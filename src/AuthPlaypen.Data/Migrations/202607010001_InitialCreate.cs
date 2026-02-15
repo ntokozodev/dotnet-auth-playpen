@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace AuthPlaypen.Api.Migrations;
+namespace AuthPlaypen.Data.Migrations;
 
 public partial class InitialCreate : Migration
 {

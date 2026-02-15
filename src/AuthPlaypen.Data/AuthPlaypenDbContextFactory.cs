@@ -1,8 +1,9 @@
 using AuthPlaypen.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Configuration;
 
-namespace AuthPlaypen.Api;
+namespace AuthPlaypen.Data;
 
 public class AuthPlaypenDbContextFactory : IDesignTimeDbContextFactory<AuthPlaypenDbContext>
 {

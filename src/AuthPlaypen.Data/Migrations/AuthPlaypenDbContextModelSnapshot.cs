@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace AuthPlaypen.Api.Migrations;
+namespace AuthPlaypen.Data.Migrations;
 
 [DbContext(typeof(AuthPlaypenDbContext))]
 partial class AuthPlaypenDbContextModelSnapshot : ModelSnapshot
