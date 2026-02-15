@@ -75,3 +75,5 @@ Swagger UI: `http://localhost:8080/swagger`
 ## Migrations
 
 EF Core migration is included in `src/AuthPlaypen.Api/Migrations` and automatically applied on startup via `Database.Migrate()`.
+
+For design-time EF commands (for example, `dotnet ef migrations add`), `AuthPlaypenDbContextFactory` reads the `Postgres` connection string from `appsettings.Development.json` or `appsettings.json`.
