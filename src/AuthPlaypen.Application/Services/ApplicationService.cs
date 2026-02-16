@@ -47,16 +47,6 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
             return (null, redirectUrisValidationError);
         }
 
-        var scopes = await dbContext.Scopes
-            .Include(s => s.ApplicationScopes)
-            .Where(s => request.ScopeIds.Contains(s.Id))
-            .ToListAsync(cancellationToken);
-
-        if (scopes.Count != request.ScopeIds.Distinct().Count())
-        {
-            return (null, "One or more scope IDs are invalid.");
-        }
-
         var application = new ApplicationEntity
         {
             Id = Guid.NewGuid(),
@@ -67,6 +57,22 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
             PostLogoutRedirectUris = request.PostLogoutRedirectUris,
             RedirectUris = request.RedirectUris
         };
+
+        var scopes = await dbContext.Scopes
+            .Include(s => s.ApplicationScopes)
+            .Where(s => request.ScopeIds.Contains(s.Id))
+            .ToListAsync(cancellationToken);
+
+        if (scopes.Count != request.ScopeIds.Distinct().Count())
+        {
+            return (null, "One or more scope IDs are invalid.");
+        }
+
+        var scopeValidationError = ValidateScopeAssignments(scopes, application.Id);
+        if (scopeValidationError is not null)
+        {
+            return (null, scopeValidationError);
+        }
 
         foreach (var scope in scopes)
         {
@@ -115,6 +121,12 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
         if (scopes.Count != request.ScopeIds.Distinct().Count())
         {
             return (null, "One or more scope IDs are invalid.", false);
+        }
+
+        var scopeValidationError = ValidateScopeAssignments(scopes, application.Id);
+        if (scopeValidationError is not null)
+        {
+            return (null, scopeValidationError, false);
         }
 
         application.DisplayName = request.DisplayName;
@@ -180,6 +192,20 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
         if (!string.IsNullOrWhiteSpace(redirectUris) || !string.IsNullOrWhiteSpace(postLogoutRedirectUris))
         {
             return "RedirectUris and PostLogoutRedirectUris are only allowed for AuthorizationWithPKCE flow.";
+        }
+
+        return null;
+    }
+
+    private static string? ValidateScopeAssignments(IEnumerable<ScopeEntity> scopes, Guid applicationId)
+    {
+        var hasDisallowedScope = scopes.Any(scope =>
+            !scope.IsGlobal &&
+            !scope.ApplicationScopes.Any(applicationScope => applicationScope.ApplicationId == applicationId));
+
+        if (hasDisallowedScope)
+        {
+            return "One or more scopes are not allowed for this application.";
         }
 
         return null;
