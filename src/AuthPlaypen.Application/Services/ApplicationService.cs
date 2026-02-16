@@ -15,12 +15,7 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var globalScopes = await dbContext.Scopes
-            .Where(s => !s.ApplicationScopes.Any())
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-
-        return applications.Select(a => ToDto(a, globalScopes)).ToList();
+        return applications.Select(ToDto).ToList();
     }
 
     public async Task<ApplicationDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
@@ -36,12 +31,7 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
             return null;
         }
 
-        var globalScopes = await dbContext.Scopes
-            .Where(s => !s.ApplicationScopes.Any())
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-
-        return ToDto(application, globalScopes);
+        return ToDto(application);
     }
 
     public async Task<(ApplicationDto? Application, string? Error)> CreateAsync(CreateApplicationRequest request, CancellationToken cancellationToken)
@@ -78,7 +68,7 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
             RedirectUris = request.RedirectUris
         };
 
-        foreach (var scope in scopes.Where(s => !s.IsGlobal))
+        foreach (var scope in scopes)
         {
             application.ApplicationScopes.Add(new ApplicationScopeEntity
             {
@@ -90,7 +80,7 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
         dbContext.Applications.Add(application);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var dto = ToDto(application, scopes.Where(s => s.IsGlobal).ToList());
+        var dto = ToDto(application);
         return (dto, null);
     }
 
@@ -135,7 +125,7 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
         application.RedirectUris = request.RedirectUris;
 
         application.ApplicationScopes.Clear();
-        foreach (var scope in scopes.Where(s => !s.IsGlobal))
+        foreach (var scope in scopes)
         {
             application.ApplicationScopes.Add(new ApplicationScopeEntity
             {
@@ -145,7 +135,7 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        var dto = ToDto(application, scopes.Where(s => s.IsGlobal).ToList());
+        var dto = ToDto(application);
         return (dto, null, false);
     }
 
@@ -162,12 +152,10 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
         return true;
     }
 
-    private static ApplicationDto ToDto(ApplicationEntity application, IReadOnlyCollection<ScopeEntity> globalScopes)
+    private static ApplicationDto ToDto(ApplicationEntity application)
     {
-        var scopeDtos = globalScopes
-            .Concat(application.ApplicationScopes.Select(x => x.Scope))
-            .GroupBy(s => s.Id)
-            .Select(g => g.First())
+        var scopeDtos = application.ApplicationScopes
+            .Select(x => x.Scope)
             .Select(s => new ScopeReferenceDto(s.Id, s.DisplayName, s.ScopeName, s.Description))
             .ToList();
 
