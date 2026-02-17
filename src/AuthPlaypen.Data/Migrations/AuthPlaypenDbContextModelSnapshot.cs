@@ -51,6 +51,9 @@ partial class AuthPlaypenDbContextModelSnapshot : ModelSnapshot
 
             b.HasKey("Id");
 
+            b.HasIndex("ClientId")
+                .IsUnique();
+
             b.ToTable("applications");
         });
 

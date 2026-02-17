@@ -19,6 +19,7 @@ public class AuthPlaypenDbContext(DbContextOptions<AuthPlaypenDbContext> options
             entity.Property(x => x.ClientId).IsRequired();
             entity.Property(x => x.ClientSecret).IsRequired();
             entity.Property(x => x.Flow).HasConversion<string>().IsRequired();
+            entity.HasIndex(x => x.ClientId).IsUnique();
         });
 
         modelBuilder.Entity<ScopeEntity>(entity =>

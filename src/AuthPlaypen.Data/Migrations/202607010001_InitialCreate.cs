@@ -70,6 +70,12 @@ public partial class InitialCreate : Migration
             column: "ScopeId");
 
         migrationBuilder.CreateIndex(
+            name: "IX_applications_ClientId",
+            table: "applications",
+            column: "ClientId",
+            unique: true);
+
+        migrationBuilder.CreateIndex(
             name: "IX_scopes_ScopeName",
             table: "scopes",
             column: "ScopeName",

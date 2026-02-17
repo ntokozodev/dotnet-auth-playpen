@@ -36,6 +36,11 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
 
     public async Task<(ApplicationDto? Application, string? Error)> CreateAsync(CreateApplicationRequest request, CancellationToken cancellationToken)
     {
+        if (await dbContext.Applications.AnyAsync(a => a.ClientId == request.ClientId, cancellationToken))
+        {
+            return (null, "An application with this ClientId already exists.");
+        }
+
         if (request.ScopeIds is null || request.ScopeIds.Count == 0)
         {
             return (null, "Application must include at least one scope.");
@@ -92,6 +97,11 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
 
     public async Task<(ApplicationDto? Application, string? Error, bool NotFound)> UpdateAsync(Guid id, UpdateApplicationRequest request, CancellationToken cancellationToken)
     {
+        if (await dbContext.Applications.AnyAsync(a => a.Id != id && a.ClientId == request.ClientId, cancellationToken))
+        {
+            return (null, "An application with this ClientId already exists.", false);
+        }
+
         if (request.ScopeIds is null || request.ScopeIds.Count == 0)
         {
             return (null, "Application must include at least one scope.", false);
