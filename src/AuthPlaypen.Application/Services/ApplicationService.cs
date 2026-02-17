@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AuthPlaypen.Application.Services;
 
-public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationService
+public class ApplicationService(
+    AuthPlaypenDbContext dbContext,
+    IOpenIddictApplicationSyncService openIddictApplicationSyncService) : IApplicationService
 {
     public async Task<IReadOnlyCollection<ApplicationDto>> GetAllAsync(CancellationToken cancellationToken)
     {
@@ -92,6 +94,8 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var dto = ToDto(application);
+        await openIddictApplicationSyncService.HandleApplicationCreationAsync(dto, cancellationToken);
+
         return (dto, null);
     }
 
@@ -158,6 +162,8 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
 
         await dbContext.SaveChangesAsync(cancellationToken);
         var dto = ToDto(application);
+        await openIddictApplicationSyncService.HandleApplicationUpdateAsync(dto, cancellationToken);
+
         return (dto, null, false);
     }
 
@@ -171,6 +177,7 @@ public class ApplicationService(AuthPlaypenDbContext dbContext) : IApplicationSe
 
         dbContext.Applications.Remove(application);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await openIddictApplicationSyncService.HandleApplicationDeletionAsync(id, cancellationToken);
         return true;
     }
 

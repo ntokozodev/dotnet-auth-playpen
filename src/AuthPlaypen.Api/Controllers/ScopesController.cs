@@ -1,10 +1,12 @@
 using AuthPlaypen.Application.Dtos;
 using AuthPlaypen.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthPlaypen.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class ScopesController(IScopeService scopeService) : ControllerBase
 {
