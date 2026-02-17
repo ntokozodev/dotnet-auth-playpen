@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AuthPlaypen.Application.Services;
 
-public class ScopeService(AuthPlaypenDbContext dbContext) : IScopeService
+public class ScopeService(
+    AuthPlaypenDbContext dbContext,
+    IOpenIddictScopeSyncService openIddictScopeSyncService) : IScopeService
 {
     public async Task<IReadOnlyCollection<ScopeDto>> GetAllAsync(CancellationToken cancellationToken)
     {
@@ -72,7 +74,10 @@ public class ScopeService(AuthPlaypenDbContext dbContext) : IScopeService
             .AsNoTracking()
             .FirstAsync(s => s.Id == scope.Id, cancellationToken);
 
-        return (ToDto(reloaded), null);
+        var dto = ToDto(reloaded);
+        await openIddictScopeSyncService.HandleScopeCreationAsync(dto, cancellationToken);
+
+        return (dto, null);
     }
 
     public async Task<(ScopeDto? Scope, string? Error, bool NotFound)> UpdateAsync(Guid id, UpdateScopeRequest request, CancellationToken cancellationToken)
@@ -133,7 +138,10 @@ public class ScopeService(AuthPlaypenDbContext dbContext) : IScopeService
             .AsNoTracking()
             .FirstAsync(s => s.Id == id, cancellationToken);
 
-        return (ToDto(reloaded), null, false);
+        var dto = ToDto(reloaded);
+        await openIddictScopeSyncService.HandleScopeUpdateAsync(dto, cancellationToken);
+
+        return (dto, null, false);
     }
 
     public async Task<(bool Deleted, string? Error, bool NotFound)> DeleteAsync(Guid id, CancellationToken cancellationToken)
@@ -160,6 +168,7 @@ public class ScopeService(AuthPlaypenDbContext dbContext) : IScopeService
 
         dbContext.Scopes.Remove(scope);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await openIddictScopeSyncService.HandleScopeDeletionAsync(id, cancellationToken);
         return (true, null, false);
     }
 

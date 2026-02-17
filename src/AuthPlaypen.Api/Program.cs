@@ -1,12 +1,82 @@
-using AuthPlaypen.Data.Data;
-using Microsoft.EntityFrameworkCore;
+using AuthPlaypen.Api.Services;
 using AuthPlaypen.Application.Services;
+using AuthPlaypen.Data.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    var tenantId = builder.Configuration["AzureAd:TenantId"];
+    var clientId = builder.Configuration["AzureAd:ClientId"];
+    var scope = builder.Configuration["AzureAd:Scope"];
+
+    if (!string.IsNullOrWhiteSpace(tenantId) && !string.IsNullOrWhiteSpace(clientId) && !string.IsNullOrWhiteSpace(scope))
+    {
+        var authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
+
+        options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.OAuth2,
+            Flows = new OpenApiOAuthFlows
+            {
+                AuthorizationCode = new OpenApiOAuthFlow
+                {
+                    AuthorizationUrl = new Uri($"{authority}/oauth2/v2.0/authorize"),
+                    TokenUrl = new Uri($"{authority}/oauth2/v2.0/token"),
+                    Scopes = new Dictionary<string, string>
+                    {
+                        [scope] = "AuthPlaypen admin scope"
+                    }
+                }
+            }
+        });
+
+        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Id = "oauth2",
+                        Type = ReferenceType.SecurityScheme
+                    }
+                },
+                [scope]
+            }
+        });
+    }
+});
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var tenantId = builder.Configuration["AzureAd:TenantId"];
+        var audience = builder.Configuration["AzureAd:Audience"];
+
+        if (string.IsNullOrWhiteSpace(tenantId) || string.IsNullOrWhiteSpace(audience))
+        {
+            throw new InvalidOperationException("AzureAd:TenantId and AzureAd:Audience must be configured.");
+        }
+
+        options.Authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
+        options.Audience = audience;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidAudience = audience
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddDbContext<AuthPlaypenDbContext>(options =>
 {
@@ -19,13 +89,31 @@ builder.Services.AddDbContext<AuthPlaypenDbContext>(options =>
 
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddScoped<IScopeService, ScopeService>();
+builder.Services.AddScoped<IOpenIddictScopeSyncService, OpenIddictScopeSyncService>();
+builder.Services.AddScoped<IOpenIddictApplicationSyncService, OpenIddictApplicationSyncService>();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        var clientId = builder.Configuration["AzureAd:ClientId"];
+        var scope = builder.Configuration["AzureAd:Scope"];
+
+        options.OAuthUsePkce();
+
+        if (!string.IsNullOrWhiteSpace(clientId))
+        {
+            options.OAuthClientId(clientId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(scope))
+        {
+            options.OAuthScopes(scope);
+        }
+    });
 }
 
 using (var scope = app.Services.CreateScope())
@@ -35,6 +123,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
