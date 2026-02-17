@@ -31,6 +31,11 @@ public class ScopeService(AuthPlaypenDbContext dbContext) : IScopeService
 
     public async Task<(ScopeDto? Scope, string? Error)> CreateAsync(CreateScopeRequest request, CancellationToken cancellationToken)
     {
+        if (await dbContext.Scopes.AnyAsync(s => s.ScopeName == request.ScopeName, cancellationToken))
+        {
+            return (null, "A scope with this ScopeName already exists.");
+        }
+
         var appIds = request.ApplicationIds?.Distinct().ToList() ?? [];
         if (appIds.Count > 0)
         {
@@ -72,6 +77,11 @@ public class ScopeService(AuthPlaypenDbContext dbContext) : IScopeService
 
     public async Task<(ScopeDto? Scope, string? Error, bool NotFound)> UpdateAsync(Guid id, UpdateScopeRequest request, CancellationToken cancellationToken)
     {
+        if (await dbContext.Scopes.AnyAsync(s => s.Id != id && s.ScopeName == request.ScopeName, cancellationToken))
+        {
+            return (null, "A scope with this ScopeName already exists.", false);
+        }
+
         var scope = await dbContext.Scopes
             .Include(s => s.ApplicationScopes)
             .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);

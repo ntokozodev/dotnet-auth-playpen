@@ -28,7 +28,7 @@ public class ApplicationsController(IApplicationService applicationService) : Co
         var (application, error) = await applicationService.CreateAsync(request, cancellationToken);
         if (error is not null)
         {
-            return BadRequest(error);
+            return ToErrorResult(error);
         }
 
         return CreatedAtAction(nameof(GetById), new { id = application!.Id }, application);
@@ -45,10 +45,31 @@ public class ApplicationsController(IApplicationService applicationService) : Co
 
         if (error is not null)
         {
-            return BadRequest(error);
+            return ToErrorResult(error);
         }
 
         return Ok(application);
+    }
+
+
+    private ActionResult ToErrorResult(string error)
+    {
+        if (error.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+        {
+            return Conflict(new ProblemDetails
+            {
+                Title = "Duplicate value",
+                Detail = error,
+                Status = StatusCodes.Status409Conflict
+            });
+        }
+
+        return BadRequest(new ProblemDetails
+        {
+            Title = "Validation error",
+            Detail = error,
+            Status = StatusCodes.Status400BadRequest
+        });
     }
 
     [HttpDelete("{id:guid}")]
