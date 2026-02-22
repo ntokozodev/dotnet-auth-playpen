@@ -30,17 +30,6 @@ public class ScopeService(
         return new CursorPagedResultDto<ScopeDto>(items, nextCursor);
     }
 
-    public async Task<IReadOnlyCollection<ScopeDto>> GetAllAsync(CancellationToken cancellationToken)
-    {
-        var scopes = await dbContext.Scopes
-            .Include(s => s.ApplicationScopes)
-            .ThenInclude(x => x.Application)
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-
-        return scopes.Select(ToDto).ToList();
-    }
-
     public async Task<ScopeDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var scope = await dbContext.Scopes

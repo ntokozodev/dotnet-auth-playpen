@@ -4,7 +4,6 @@ namespace AuthPlaypen.Application.Services;
 
 public interface IScopeService
 {
-    Task<IReadOnlyCollection<ScopeDto>> GetAllAsync(CancellationToken cancellationToken);
     Task<CursorPagedResultDto<ScopeDto>> GetPageAsync(Guid? cursor, int pageSize, CancellationToken cancellationToken);
     Task<ScopeDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
     Task<(ScopeDto? Scope, string? Error)> CreateAsync(CreateScopeRequest request, CancellationToken cancellationToken);

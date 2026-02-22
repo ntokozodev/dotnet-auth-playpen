@@ -1,9 +1,9 @@
 import { A } from "@solidjs/router";
 import { For } from "solid-js";
-import { usePagedScopes } from "@/queries/scopeQueries";
+import { useScopes } from "@/queries/scopeQueries";
 
 export function Scopes() {
-  const query = usePagedScopes();
+  const query = useScopes();
 
   return (
     <div class="space-y-4">
@@ -13,7 +13,7 @@ export function Scopes() {
           + Create
         </A>
       </div>
-      <For each={query.data?.pages.flatMap((p) => p.items) ?? []}>
+      <For each={query.data ?? []}>
         {(scope) => (
           <div class="flex items-start justify-between rounded border border-slate-200 bg-white p-4">
             <div>
@@ -26,13 +26,6 @@ export function Scopes() {
           </div>
         )}
       </For>
-      <button
-        class="rounded bg-blue-700 px-3 py-2 text-white disabled:opacity-50"
-        disabled={!query.hasNextPage || query.isFetchingNextPage}
-        onClick={() => query.fetchNextPage()}
-      >
-        Load more
-      </button>
     </div>
   );
 }
