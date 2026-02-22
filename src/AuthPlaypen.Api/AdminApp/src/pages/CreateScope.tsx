@@ -1,34 +1,22 @@
-import { useParams } from "@solidjs/router";
-import { createEffect, createSignal } from "solid-js";
+import { useNavigate } from "@solidjs/router";
+import { createSignal } from "solid-js";
 import { MultiSelect } from "@/components/MultiSelect";
 import { useApplications } from "@/queries/applicationQueries";
-import { useScopes, useUpdateScope } from "@/queries/scopeQueries";
+import { useCreateScope } from "@/queries/scopeQueries";
 
-export function EditScope() {
-  const params = useParams();
-  const scopes = useScopes();
+export function CreateScope() {
+  const navigate = useNavigate();
+  const createScope = useCreateScope();
   const apps = useApplications();
-  const update = useUpdateScope();
 
   const [displayName, setDisplayName] = createSignal("");
   const [scopeName, setScopeName] = createSignal("");
   const [description, setDescription] = createSignal("");
-  const [selectedAppIds, setSelectedAppIds] = createSignal<string[]>([]);
-
-  const selectedScope = () => scopes.data?.find((s) => s.id === params.id);
-
-  createEffect(() => {
-    const scope = selectedScope();
-    if (!scope) return;
-    setDisplayName(scope.displayName);
-    setScopeName(scope.scopeName);
-    setDescription(scope.description);
-    setSelectedAppIds(scope.applications.map((a) => a.id));
-  });
+  const [applicationIds, setApplicationIds] = createSignal<string[]>([]);
 
   return (
     <div class="space-y-4">
-      <h1 class="text-2xl font-semibold">Edit Scope</h1>
+      <h1 class="text-2xl font-semibold">Create Scope</h1>
       <label class="block">
         <span class="text-sm">Display Name</span>
         <input class="mt-1 w-full rounded border p-2" value={displayName()} onInput={(e) => setDisplayName(e.currentTarget.value)} />
@@ -44,26 +32,26 @@ export function EditScope() {
       <MultiSelect
         label="Applications"
         options={(apps.data ?? []).map((a) => ({ id: a.id, label: `${a.displayName} (${a.clientId})` }))}
-        selected={selectedAppIds()}
-        onChange={setSelectedAppIds}
+        selected={applicationIds()}
+        onChange={setApplicationIds}
       />
       <button
         class="rounded bg-blue-700 px-3 py-2 text-white"
         onClick={() => {
-          const scope = selectedScope();
-          if (!scope) return;
-          update.mutate({
-            id: scope.id,
-            payload: {
+          createScope.mutate(
+            {
               displayName: displayName(),
               scopeName: scopeName(),
               description: description(),
-              applicationIds: selectedAppIds(),
+              applicationIds: applicationIds(),
             },
-          });
+            {
+              onSuccess: () => navigate("/scopes"),
+            },
+          );
         }}
       >
-        Save
+        Create
       </button>
     </div>
   );
