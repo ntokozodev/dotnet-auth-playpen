@@ -1,0 +1,26 @@
+{
+  "name": "auth-playpen-admin-app",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@solidjs/router": "^0.15.3",
+    "@tanstack/solid-query": "^5.64.2",
+    "solid-js": "^1.9.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.8",
+    "@types/node": "^22.10.2",
+    "solid-devtools": "^0.33.0",
+    "tailwindcss": "^4.0.8",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.1",
+    "vite-plugin-solid": "^2.11.0",
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}

@@ -1,15 +1,29 @@
 using AuthPlaypen.Application.Dtos;
 using AuthPlaypen.Application.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthPlaypen.Api.Controllers;
 
 [ApiController]
-[Authorize]
 [Route("api/[controller]")]
 public class ScopesController(IScopeService scopeService) : ControllerBase
 {
+    [HttpGet("paged")]
+    public async Task<ActionResult<CursorPagedResultDto<ScopeDto>>> GetPage(
+        [FromQuery] string? cursor,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        if (!string.IsNullOrWhiteSpace(cursor) && !Guid.TryParse(cursor, out _))
+        {
+            return BadRequest(new ProblemDetails { Title = "Invalid cursor", Detail = "Cursor must be a valid GUID." });
+        }
+
+        var parsedCursor = string.IsNullOrWhiteSpace(cursor) ? (Guid?)null : Guid.Parse(cursor);
+        var result = await scopeService.GetPageAsync(parsedCursor, Math.Clamp(pageSize, 1, 100), cancellationToken);
+        return Ok(result);
+    }
+
     [HttpGet]
     public async Task<ActionResult<IReadOnlyCollection<ScopeDto>>> GetAll(CancellationToken cancellationToken)
     {

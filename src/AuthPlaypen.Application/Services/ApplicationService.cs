@@ -9,6 +9,27 @@ public class ApplicationService(
     AuthPlaypenDbContext dbContext,
     IOpenIddictApplicationSyncService openIddictApplicationSyncService) : IApplicationService
 {
+    public async Task<CursorPagedResultDto<ApplicationDto>> GetPageAsync(Guid? cursor, int pageSize, CancellationToken cancellationToken)
+    {
+        var query = dbContext.Applications
+            .Include(a => a.ApplicationScopes)
+            .ThenInclude(a => a.Scope)
+            .AsNoTracking()
+            .OrderBy(a => a.Id)
+            .AsQueryable();
+
+        if (cursor.HasValue)
+        {
+            query = query.Where(a => a.Id.CompareTo(cursor.Value) > 0);
+        }
+
+        var entities = await query.Take(pageSize + 1).ToListAsync(cancellationToken);
+        var hasMore = entities.Count > pageSize;
+        var items = entities.Take(pageSize).Select(ToDto).ToList();
+        var nextCursor = hasMore ? items.Last().Id.ToString() : null;
+        return new CursorPagedResultDto<ApplicationDto>(items, nextCursor);
+    }
+
     public async Task<IReadOnlyCollection<ApplicationDto>> GetAllAsync(CancellationToken cancellationToken)
     {
         var applications = await dbContext.Applications

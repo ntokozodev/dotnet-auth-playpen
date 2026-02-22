@@ -54,17 +54,15 @@ builder.Services.AddSwaggerGen(options =>
     }
 });
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+var tenantId = builder.Configuration["AzureAd:TenantId"];
+var audience = builder.Configuration["AzureAd:Audience"];
+var authConfigured = !string.IsNullOrWhiteSpace(tenantId) && !string.IsNullOrWhiteSpace(audience);
+
+if (authConfigured)
+{
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        var tenantId = builder.Configuration["AzureAd:TenantId"];
-        var audience = builder.Configuration["AzureAd:Audience"];
-
-        if (string.IsNullOrWhiteSpace(tenantId) || string.IsNullOrWhiteSpace(audience))
-        {
-            throw new InvalidOperationException("AzureAd:TenantId and AzureAd:Audience must be configured.");
-        }
-
         options.Authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
         options.Audience = audience;
         options.TokenValidationParameters = new TokenValidationParameters
@@ -75,6 +73,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = audience
         };
     });
+}
 
 builder.Services.AddAuthorization();
 
@@ -123,8 +122,17 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+if (authConfigured)
+{
+    app.UseAuthentication();
+}
+
 app.UseAuthorization();
+
+app.MapFallbackToFile("/admin/{*path:nonfile}", "admin/index.html");
 app.MapControllers();
 
 app.Run();
