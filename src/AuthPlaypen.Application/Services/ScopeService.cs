@@ -9,6 +9,27 @@ public class ScopeService(
     AuthPlaypenDbContext dbContext,
     IOpenIddictScopeSyncService openIddictScopeSyncService) : IScopeService
 {
+    public async Task<CursorPagedResultDto<ScopeDto>> GetPageAsync(Guid? cursor, int pageSize, CancellationToken cancellationToken)
+    {
+        var query = dbContext.Scopes
+            .Include(s => s.ApplicationScopes)
+            .ThenInclude(x => x.Application)
+            .AsNoTracking()
+            .OrderBy(s => s.Id)
+            .AsQueryable();
+
+        if (cursor.HasValue)
+        {
+            query = query.Where(s => s.Id.CompareTo(cursor.Value) > 0);
+        }
+
+        var entities = await query.Take(pageSize + 1).ToListAsync(cancellationToken);
+        var hasMore = entities.Count > pageSize;
+        var items = entities.Take(pageSize).Select(ToDto).ToList();
+        var nextCursor = hasMore ? items.Last().Id.ToString() : null;
+        return new CursorPagedResultDto<ScopeDto>(items, nextCursor);
+    }
+
     public async Task<IReadOnlyCollection<ScopeDto>> GetAllAsync(CancellationToken cancellationToken)
     {
         var scopes = await dbContext.Scopes

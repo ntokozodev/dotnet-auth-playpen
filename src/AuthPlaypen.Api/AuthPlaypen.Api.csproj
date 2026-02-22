@@ -17,4 +17,22 @@
     <ProjectReference Include="..\AuthPlaypen.Data\AuthPlaypen.Data.csproj" />
     <ProjectReference Include="..\AuthPlaypen.Domain\AuthPlaypen.Domain.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="AdminApp\**" />
+    <Content Remove="AdminApp\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="AdminApp\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+  <Target Name="BuildAdminApp" BeforeTargets="Build">
+    <Exec WorkingDirectory="AdminApp" Command="npm install" />
+    <Exec WorkingDirectory="AdminApp" Command="npm run build" />
+  </Target>
 </Project>
