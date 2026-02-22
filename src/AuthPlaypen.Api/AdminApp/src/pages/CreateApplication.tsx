@@ -1,15 +1,14 @@
-import { useParams } from "@solidjs/router";
-import { createEffect, createSignal } from "solid-js";
+import { useNavigate } from "@solidjs/router";
+import { createSignal } from "solid-js";
 import { MultiSelect } from "@/components/MultiSelect";
-import { useApplications, useUpdateApplication } from "@/queries/applicationQueries";
+import { useCreateApplication } from "@/queries/applicationQueries";
 import { useScopes } from "@/queries/scopeQueries";
 import type { ApplicationFlow } from "@/types/models";
 
-export function EditApplication() {
-  const params = useParams();
-  const apps = useApplications();
+export function CreateApplication() {
+  const navigate = useNavigate();
+  const createApplication = useCreateApplication();
   const scopes = useScopes();
-  const update = useUpdateApplication();
 
   const [displayName, setDisplayName] = createSignal("");
   const [clientId, setClientId] = createSignal("");
@@ -17,25 +16,11 @@ export function EditApplication() {
   const [flow, setFlow] = createSignal<ApplicationFlow>("ClientCredentials");
   const [postLogoutRedirectUris, setPostLogoutRedirectUris] = createSignal("");
   const [redirectUris, setRedirectUris] = createSignal("");
-  const [selectedScopeIds, setSelectedScopeIds] = createSignal<string[]>([]);
-
-  const selectedApp = () => apps.data?.find((a) => a.id === params.id);
-
-  createEffect(() => {
-    const app = selectedApp();
-    if (!app) return;
-    setDisplayName(app.displayName);
-    setClientId(app.clientId);
-    setClientSecret(app.clientSecret);
-    setFlow(app.flow);
-    setPostLogoutRedirectUris(app.postLogoutRedirectUris ?? "");
-    setRedirectUris(app.redirectUris ?? "");
-    setSelectedScopeIds(app.scopes.map((s) => s.id));
-  });
+  const [scopeIds, setScopeIds] = createSignal<string[]>([]);
 
   return (
     <div class="space-y-4">
-      <h1 class="text-2xl font-semibold">Edit Application</h1>
+      <h1 class="text-2xl font-semibold">Create Application</h1>
       <label class="block">
         <span class="text-sm">Display Name</span>
         <input class="mt-1 w-full rounded border p-2" value={displayName()} onInput={(e) => setDisplayName(e.currentTarget.value)} />
@@ -70,29 +55,29 @@ export function EditApplication() {
       <MultiSelect
         label="Scopes"
         options={(scopes.data ?? []).map((s) => ({ id: s.id, label: `${s.displayName} (${s.scopeName})` }))}
-        selected={selectedScopeIds()}
-        onChange={setSelectedScopeIds}
+        selected={scopeIds()}
+        onChange={setScopeIds}
       />
       <button
         class="rounded bg-blue-700 px-3 py-2 text-white"
         onClick={() => {
-          const app = selectedApp();
-          if (!app) return;
-          update.mutate({
-            id: app.id,
-            payload: {
+          createApplication.mutate(
+            {
               displayName: displayName(),
               clientId: clientId(),
               clientSecret: clientSecret(),
               flow: flow(),
               redirectUris: redirectUris(),
               postLogoutRedirectUris: postLogoutRedirectUris(),
-              scopeIds: selectedScopeIds(),
+              scopeIds: scopeIds(),
             },
-          });
+            {
+              onSuccess: () => navigate("/applications"),
+            },
+          );
         }}
       >
-        Save
+        Create
       </button>
     </div>
   );

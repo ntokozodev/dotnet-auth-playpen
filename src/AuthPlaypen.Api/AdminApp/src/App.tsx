@@ -1,6 +1,8 @@
 import { Route, Router } from "@solidjs/router";
 import { MainLayout } from "@/layouts/MainLayout";
 import { Applications } from "@/pages/Applications";
+import { CreateApplication } from "@/pages/CreateApplication";
+import { CreateScope } from "@/pages/CreateScope";
 import { Dashboard } from "@/pages/Dashboard";
 import { EditApplication } from "@/pages/EditApplication";
 import { EditScope } from "@/pages/EditScope";
@@ -12,8 +14,10 @@ export default function App() {
       <Route component={MainLayout}>
         <Route path="/" component={Dashboard} />
         <Route path="/applications" component={Applications} />
+        <Route path="/applications/create" component={CreateApplication} />
         <Route path="/applications/:id/edit" component={EditApplication} />
         <Route path="/scopes" component={Scopes} />
+        <Route path="/scopes/create" component={CreateScope} />
         <Route path="/scopes/:id/edit" component={EditScope} />
       </Route>
     </Router>
