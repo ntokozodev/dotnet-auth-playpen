@@ -127,17 +127,6 @@ public class ScopeService(
             }
         }
 
-        var validationError = await ValidateMutationDoesNotBreakMinimumScopeRule(
-            scope,
-            appIds.Count == 0,
-            appIds,
-            cancellationToken);
-
-        if (validationError is not null)
-        {
-            return (null, validationError, false);
-        }
-
         scope.DisplayName = request.DisplayName;
         scope.ScopeName = request.ScopeName;
         scope.Description = request.Description;
@@ -176,75 +165,10 @@ public class ScopeService(
             return (false, null, true);
         }
 
-        var validationError = await ValidateMutationDoesNotBreakMinimumScopeRule(
-            scope,
-            false,
-            [],
-            cancellationToken);
-
-        if (validationError is not null)
-        {
-            return (false, validationError, false);
-        }
-
         dbContext.Scopes.Remove(scope);
         await dbContext.SaveChangesAsync(cancellationToken);
         await openIddictScopeSyncService.HandleScopeDeletionAsync(id, cancellationToken);
         return (true, null, false);
-    }
-
-    private async Task<string?> ValidateMutationDoesNotBreakMinimumScopeRule(
-        ScopeEntity currentScope,
-        bool nextIsGlobal,
-        IReadOnlySet<Guid> nextAppIds,
-        CancellationToken cancellationToken)
-    {
-        var allApps = await dbContext.Applications
-            .AsNoTracking()
-            .Select(a => a.Id)
-            .ToListAsync(cancellationToken);
-
-        if (allApps.Count == 0)
-        {
-            return null;
-        }
-
-        var globalCount = await dbContext.Scopes.CountAsync(s => !s.ApplicationScopes.Any(), cancellationToken);
-
-        var appSpecificCounts = await dbContext.ApplicationScopes
-            .GroupBy(x => x.ApplicationId)
-            .Select(g => new { ApplicationId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.ApplicationId, x => x.Count, cancellationToken);
-
-        var currentlyScopedAppIds = currentScope.ApplicationScopes.Count == 0
-            ? allApps.ToHashSet()
-            : currentScope.ApplicationScopes.Select(x => x.ApplicationId).ToHashSet();
-
-        foreach (var appId in allApps)
-        {
-            var effectiveCount = globalCount + appSpecificCounts.GetValueOrDefault(appId, 0);
-
-            if (currentScope.ApplicationScopes.Count == 0)
-            {
-                effectiveCount -= 1;
-            }
-            else if (currentlyScopedAppIds.Contains(appId))
-            {
-                effectiveCount -= 1;
-            }
-
-            if (nextIsGlobal || nextAppIds.Contains(appId))
-            {
-                effectiveCount += 1;
-            }
-
-            if (effectiveCount <= 0)
-            {
-                return "Operation would leave an application without any scope, which is not allowed.";
-            }
-        }
-
-        return null;
     }
 
     private static ScopeDto ToDto(ScopeEntity scope)

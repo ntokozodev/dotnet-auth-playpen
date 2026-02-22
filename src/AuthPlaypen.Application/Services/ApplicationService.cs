@@ -64,11 +64,6 @@ public class ApplicationService(
             return (null, "An application with this ClientId already exists.");
         }
 
-        if (request.ScopeIds is null || request.ScopeIds.Count == 0)
-        {
-            return (null, "Application must include at least one scope.");
-        }
-
         var redirectUrisValidationError = ValidateRedirectUris(request.Flow, request.RedirectUris, request.PostLogoutRedirectUris);
         if (redirectUrisValidationError is not null)
         {
@@ -86,12 +81,14 @@ public class ApplicationService(
             RedirectUris = request.RedirectUris
         };
 
+        var scopeIds = request.ScopeIds?.Distinct().ToList() ?? [];
+
         var scopes = await dbContext.Scopes
             .Include(s => s.ApplicationScopes)
-            .Where(s => request.ScopeIds.Contains(s.Id))
+            .Where(s => scopeIds.Contains(s.Id))
             .ToListAsync(cancellationToken);
 
-        if (scopes.Count != request.ScopeIds.Distinct().Count())
+        if (scopes.Count != scopeIds.Count)
         {
             return (null, "One or more scope IDs are invalid.");
         }
@@ -127,11 +124,6 @@ public class ApplicationService(
             return (null, "An application with this ClientId already exists.", false);
         }
 
-        if (request.ScopeIds is null || request.ScopeIds.Count == 0)
-        {
-            return (null, "Application must include at least one scope.", false);
-        }
-
         var redirectUrisValidationError = ValidateRedirectUris(request.Flow, request.RedirectUris, request.PostLogoutRedirectUris);
         if (redirectUrisValidationError is not null)
         {
@@ -148,12 +140,14 @@ public class ApplicationService(
             return (null, null, true);
         }
 
+        var scopeIds = request.ScopeIds?.Distinct().ToList() ?? [];
+
         var scopes = await dbContext.Scopes
             .Include(s => s.ApplicationScopes)
-            .Where(s => request.ScopeIds.Contains(s.Id))
+            .Where(s => scopeIds.Contains(s.Id))
             .ToListAsync(cancellationToken);
 
-        if (scopes.Count != request.ScopeIds.Distinct().Count())
+        if (scopes.Count != scopeIds.Count)
         {
             return (null, "One or more scope IDs are invalid.", false);
         }
