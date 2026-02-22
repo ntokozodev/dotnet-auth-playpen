@@ -1,5 +1,6 @@
 import { useParams } from "@solidjs/router";
 import { createEffect, createSignal } from "solid-js";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { MultiSelect } from "@/components/MultiSelect";
 import { useApplications } from "@/queries/applicationQueries";
 import { useScopes, useUpdateScope } from "@/queries/scopeQueries";
@@ -28,6 +29,7 @@ export function EditScope() {
 
   return (
     <div class="space-y-4">
+      <Breadcrumbs items={[{ href: "/", label: "Home" }, { href: "/scopes", label: "Scopes" }, { label: "Edit Scope" }]} />
       <h1 class="text-2xl font-semibold">Edit Scope</h1>
       <label class="block">
         <span class="text-sm">Display Name</span>
