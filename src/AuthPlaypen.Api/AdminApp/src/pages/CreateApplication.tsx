@@ -1,5 +1,6 @@
 import { useNavigate } from "@solidjs/router";
 import { createSignal } from "solid-js";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { MultiSelect } from "@/components/MultiSelect";
 import { useCreateApplication } from "@/queries/applicationQueries";
 import { useScopes } from "@/queries/scopeQueries";
@@ -20,6 +21,7 @@ export function CreateApplication() {
 
   return (
     <div class="space-y-4">
+      <Breadcrumbs items={[{ href: "/", label: "Home" }, { href: "/applications", label: "Applications" }, { label: "Create Application" }]} />
       <h1 class="text-2xl font-semibold">Create Application</h1>
       <label class="block">
         <span class="text-sm">Display Name</span>

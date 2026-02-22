@@ -1,5 +1,6 @@
 import { A } from "@solidjs/router";
 import { For } from "solid-js";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useScopes } from "@/queries/scopeQueries";
 
 export function Scopes() {
@@ -7,6 +8,7 @@ export function Scopes() {
 
   return (
     <div class="space-y-4">
+      <Breadcrumbs items={[{ href: "/", label: "Home" }, { label: "Scopes" }]} />
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-semibold">Scopes</h1>
         <A class="rounded bg-blue-700 px-3 py-2 text-sm font-semibold text-white" href="/scopes/create">
