@@ -8,27 +8,25 @@ namespace AuthPlaypen.Api.Controllers;
 [Route("api/[controller]")]
 public class ScopesController(IScopeService scopeService) : ControllerBase
 {
-    [HttpGet("paged")]
+    [HttpGet]
     public async Task<ActionResult<CursorPagedResultDto<ScopeDto>>> GetPage(
         [FromQuery] string? cursor,
-        [FromQuery] int pageSize = 10,
+        [FromQuery] int pageSize,
         CancellationToken cancellationToken = default)
     {
+        if (pageSize < 1 || pageSize > 100)
+        {
+            return BadRequest(new ProblemDetails { Title = "Invalid page size", Detail = "PageSize must be between 1 and 100." });
+        }
+
         if (!string.IsNullOrWhiteSpace(cursor) && !Guid.TryParse(cursor, out _))
         {
             return BadRequest(new ProblemDetails { Title = "Invalid cursor", Detail = "Cursor must be a valid GUID." });
         }
 
         var parsedCursor = string.IsNullOrWhiteSpace(cursor) ? (Guid?)null : Guid.Parse(cursor);
-        var result = await scopeService.GetPageAsync(parsedCursor, Math.Clamp(pageSize, 1, 100), cancellationToken);
+        var result = await scopeService.GetPageAsync(parsedCursor, pageSize, cancellationToken);
         return Ok(result);
-    }
-
-    [HttpGet]
-    public async Task<ActionResult<IReadOnlyCollection<ScopeDto>>> GetAll(CancellationToken cancellationToken)
-    {
-        var scopes = await scopeService.GetAllAsync(cancellationToken);
-        return Ok(scopes);
     }
 
     [HttpGet("{id:guid}")]
@@ -91,15 +89,10 @@ public class ScopesController(IScopeService scopeService) : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var (deleted, error, notFound) = await scopeService.DeleteAsync(id, cancellationToken);
+        var (deleted, _, notFound) = await scopeService.DeleteAsync(id, cancellationToken);
         if (notFound)
         {
             return NotFound();
-        }
-
-        if (error is not null)
-        {
-            return ToErrorResult(error);
         }
 
         return deleted ? NoContent() : NotFound();

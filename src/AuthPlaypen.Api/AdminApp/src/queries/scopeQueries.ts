@@ -1,26 +1,30 @@
-import { createInfiniteQuery, createMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
+import { createInfiniteQuery, createMutation, useQueryClient } from "@tanstack/solid-query";
+import { createEffect } from "solid-js";
 import { scopeService } from "@/services/scopeService";
+
+const FULL_LIST_PAGE_SIZE = 100;
 
 export const scopeKeys = {
   all: ["scopes"] as const,
-  lists: () => [...scopeKeys.all, "list"] as const,
-  paged: () => [...scopeKeys.all, "paged"] as const,
+  paged: (pageSize: number) => [...scopeKeys.all, "paged", pageSize] as const,
 };
 
 export function useScopes() {
-  return useQuery(() => ({
-    queryKey: scopeKeys.lists(),
-    queryFn: scopeService.getAll,
-  }));
-}
-
-export function usePagedScopes() {
-  return createInfiniteQuery(() => ({
-    queryKey: scopeKeys.paged(),
-    queryFn: ({ pageParam }) => scopeService.getPaged(pageParam),
+  const query = createInfiniteQuery(() => ({
+    queryKey: scopeKeys.paged(FULL_LIST_PAGE_SIZE),
+    queryFn: ({ pageParam }) => scopeService.getPaged(pageParam, FULL_LIST_PAGE_SIZE),
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: undefined as string | undefined,
+    select: (data) => data.pages.flatMap((page) => page.items),
   }));
+
+  createEffect(() => {
+    if (query.hasNextPage && !query.isFetchingNextPage) {
+      query.fetchNextPage();
+    }
+  });
+
+  return query;
 }
 
 export function useCreateScope() {

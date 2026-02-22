@@ -8,27 +8,25 @@ namespace AuthPlaypen.Api.Controllers;
 [Route("api/[controller]")]
 public class ApplicationsController(IApplicationService applicationService) : ControllerBase
 {
-    [HttpGet("paged")]
+    [HttpGet]
     public async Task<ActionResult<CursorPagedResultDto<ApplicationDto>>> GetPage(
         [FromQuery] string? cursor,
-        [FromQuery] int pageSize = 10,
+        [FromQuery] int pageSize,
         CancellationToken cancellationToken = default)
     {
+        if (pageSize < 1 || pageSize > 100)
+        {
+            return BadRequest(new ProblemDetails { Title = "Invalid page size", Detail = "PageSize must be between 1 and 100." });
+        }
+
         if (!string.IsNullOrWhiteSpace(cursor) && !Guid.TryParse(cursor, out _))
         {
             return BadRequest(new ProblemDetails { Title = "Invalid cursor", Detail = "Cursor must be a valid GUID." });
         }
 
         var parsedCursor = string.IsNullOrWhiteSpace(cursor) ? (Guid?)null : Guid.Parse(cursor);
-        var result = await applicationService.GetPageAsync(parsedCursor, Math.Clamp(pageSize, 1, 100), cancellationToken);
+        var result = await applicationService.GetPageAsync(parsedCursor, pageSize, cancellationToken);
         return Ok(result);
-    }
-
-    [HttpGet]
-    public async Task<ActionResult<IReadOnlyCollection<ApplicationDto>>> GetAll(CancellationToken cancellationToken)
-    {
-        var applications = await applicationService.GetAllAsync(cancellationToken);
-        return Ok(applications);
     }
 
     [HttpGet("{id:guid}")]

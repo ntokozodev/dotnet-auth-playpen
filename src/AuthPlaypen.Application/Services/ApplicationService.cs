@@ -30,17 +30,6 @@ public class ApplicationService(
         return new CursorPagedResultDto<ApplicationDto>(items, nextCursor);
     }
 
-    public async Task<IReadOnlyCollection<ApplicationDto>> GetAllAsync(CancellationToken cancellationToken)
-    {
-        var applications = await dbContext.Applications
-            .Include(a => a.ApplicationScopes)
-            .ThenInclude(a => a.Scope)
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-
-        return applications.Select(ToDto).ToList();
-    }
-
     public async Task<ApplicationDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var application = await dbContext.Applications

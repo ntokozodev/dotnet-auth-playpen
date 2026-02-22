@@ -1,27 +1,31 @@
-import { createInfiniteQuery, createMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
+import { createInfiniteQuery, createMutation, useQueryClient } from "@tanstack/solid-query";
+import { createEffect } from "solid-js";
 import { applicationService } from "@/services/applicationService";
+
+const FULL_LIST_PAGE_SIZE = 100;
 
 export const applicationKeys = {
   all: ["applications"] as const,
-  lists: () => [...applicationKeys.all, "list"] as const,
-  paged: () => [...applicationKeys.all, "paged"] as const,
+  paged: (pageSize: number) => [...applicationKeys.all, "paged", pageSize] as const,
   detail: (id: string) => [...applicationKeys.all, "detail", id] as const,
 };
 
 export function useApplications() {
-  return useQuery(() => ({
-    queryKey: applicationKeys.lists(),
-    queryFn: applicationService.getAll,
-  }));
-}
-
-export function usePagedApplications() {
-  return createInfiniteQuery(() => ({
-    queryKey: applicationKeys.paged(),
-    queryFn: ({ pageParam }) => applicationService.getPaged(pageParam),
+  const query = createInfiniteQuery(() => ({
+    queryKey: applicationKeys.paged(FULL_LIST_PAGE_SIZE),
+    queryFn: ({ pageParam }) => applicationService.getPaged(pageParam, FULL_LIST_PAGE_SIZE),
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: undefined as string | undefined,
+    select: (data) => data.pages.flatMap((page) => page.items),
   }));
+
+  createEffect(() => {
+    if (query.hasNextPage && !query.isFetchingNextPage) {
+      query.fetchNextPage();
+    }
+  });
+
+  return query;
 }
 
 export function useCreateApplication() {

@@ -1,6 +1,13 @@
+import { apiConfig } from "@/services/apiConfig";
+import { mockHttp } from "@/services/mockApi";
+
 const API_BASE = "/api";
 
 export async function http<T>(path: string, init?: RequestInit): Promise<T> {
+  if (apiConfig.useMockData) {
+    return mockHttp<T>(path, init);
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
     headers: {
       "Content-Type": "application/json",
