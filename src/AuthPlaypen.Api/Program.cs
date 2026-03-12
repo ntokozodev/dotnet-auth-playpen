@@ -2,11 +2,13 @@ using AuthPlaypen.Api.OpenIddict.Redis;
 using AuthPlaypen.Api.Services;
 using AuthPlaypen.Application.Services;
 using AuthPlaypen.Data.Data;
-using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OpenIddict.Abstractions;
@@ -67,38 +69,44 @@ var accessTokenLifetimeSeconds = int.TryParse(builder.Configuration["LocalAuth:A
     ? parsedTokenLifetime
     : 3600;
 
+var enableIntrospectionEndpoint = bool.TryParse(builder.Configuration["LocalAuth:EnableIntrospectionEndpoint"], out var parsedEnableIntrospection)
+    && parsedEnableIntrospection;
+
 var tenantId = builder.Configuration["AzureAd:TenantId"];
 var audience = builder.Configuration["AzureAd:Audience"];
-var azureJwtConfigured = !string.IsNullOrWhiteSpace(tenantId) && !string.IsNullOrWhiteSpace(audience);
-
-var interactiveClientId = builder.Configuration["AzureAd:InteractiveClientId"] ?? builder.Configuration["AzureAd:ClientId"];
-var interactiveClientSecret = builder.Configuration["AzureAd:ClientSecret"];
-var azureOidcConfigured = !string.IsNullOrWhiteSpace(tenantId)
-    && !string.IsNullOrWhiteSpace(interactiveClientId)
-    && !string.IsNullOrWhiteSpace(interactiveClientSecret);
+var azureAdClientId = builder.Configuration["AzureAd:ClientId"];
+var azureAdClientSecret = builder.Configuration["AzureAd:ClientSecret"];
+var azureAdCallbackPath = builder.Configuration["AzureAd:CallbackPath"] ?? "/signin-oidc";
+var azureAdAuthority = !string.IsNullOrWhiteSpace(tenantId)
+    ? $"https://login.microsoftonline.com/{tenantId}/v2.0"
+    : null;
+var authConfigured = !string.IsNullOrWhiteSpace(tenantId) && !string.IsNullOrWhiteSpace(audience);
 
 var authenticationBuilder = builder.Services.AddAuthentication();
-authenticationBuilder.AddCookie("AuthPlaypenCookie", options =>
-{
-    options.Cookie.Name = "authplaypen.auth";
-});
 
-if (azureOidcConfigured)
+if (!string.IsNullOrWhiteSpace(azureAdAuthority) && !string.IsNullOrWhiteSpace(azureAdClientId))
 {
-    authenticationBuilder.AddOpenIdConnect("AzureAdOidc", options =>
-    {
-        options.Authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
-        options.ClientId = interactiveClientId;
-        options.ClientSecret = interactiveClientSecret;
-        options.ResponseType = "code";
-        options.UsePkce = true;
-        options.CallbackPath = "/signin-oidc";
-        options.SignInScheme = "AuthPlaypenCookie";
-        options.SaveTokens = true;
-    });
+    authenticationBuilder
+        .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
+        .AddOpenIdConnect("AzureAd", options =>
+        {
+            options.Authority = azureAdAuthority;
+            options.ClientId = azureAdClientId;
+            options.ClientSecret = azureAdClientSecret;
+            options.CallbackPath = azureAdCallbackPath;
+            options.ResponseType = OpenIdConnectResponseType.Code;
+            options.UsePkce = true;
+            options.SaveTokens = true;
+            options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+
+            options.Scope.Clear();
+            options.Scope.Add(OpenIddictConstants.Scopes.OpenId);
+            options.Scope.Add(OpenIddictConstants.Scopes.Profile);
+            options.Scope.Add(OpenIddictConstants.Scopes.Email);
+        });
 }
 
-if (azureJwtConfigured)
+if (authConfigured)
 {
     authenticationBuilder.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
@@ -137,11 +145,17 @@ builder.Services.AddOpenIddict()
     {
         options.SetAuthorizationEndpointUris("/connect/authorize");
         options.SetTokenEndpointUris("/connect/token");
-        options.SetEndSessionEndpointUris("/connect/logout");
+        options.SetLogoutEndpointUris("/connect/logout");
+        options.SetConfigurationEndpointUris("/.well-known/openid-configuration");
+        options.SetJsonWebKeySetEndpointUris("/.well-known/jwks");
+        if (enableIntrospectionEndpoint)
+        {
+            options.SetIntrospectionEndpointUris("/connect/introspect");
+        }
 
+        options.AllowClientCredentialsFlow();
         options.AllowAuthorizationCodeFlow();
         options.RequireProofKeyForCodeExchange();
-        options.AllowClientCredentialsFlow();
 
         options.SetIssuer(new Uri(localIssuer));
         options.AddAudiences(localAudience);
@@ -160,10 +174,15 @@ builder.Services.AddOpenIddict()
 
         options.AddSigningKey(signingKey);
 
-        options.UseAspNetCore()
-            .EnableAuthorizationEndpointPassthrough()
-            .EnableEndSessionEndpointPassthrough()
-            .EnableTokenEndpointPassthrough();
+        var aspNetCore = options.UseAspNetCore();
+        aspNetCore.EnableAuthorizationEndpointPassthrough();
+        aspNetCore.EnableTokenEndpointPassthrough();
+        aspNetCore.EnableLogoutEndpointPassthrough();
+
+        if (enableIntrospectionEndpoint)
+        {
+            aspNetCore.EnableIntrospectionEndpointPassthrough();
+        }
     });
 
 builder.Services.AddDbContext<AuthPlaypenDbContext>(options =>
@@ -233,8 +252,8 @@ app.MapGet("/app-config", (IConfiguration config, IWebHostEnvironment environmen
     {
         authority = "https://localhost:5100";
         clientId = "gatekeeper-web-admin";
-        redirectPath = "/auth/callback";
-        postLogoutRedirectPath = "/";
+        redirectPath = "/admin/auth/callback";
+        postLogoutRedirectPath = "/admin/auth/logout-callback";
     }
 
     return Results.Ok(new
